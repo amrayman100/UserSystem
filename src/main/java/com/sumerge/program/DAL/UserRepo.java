@@ -44,11 +44,21 @@ public class UserRepo {
 
 
     public User findByUsername(String username , boolean admin){
-        entityManager.getTransaction().begin();
-        Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-        User u = (User)query.getSingleResult();
-        entityManager.getTransaction().commit();
-        return u;
+        if(admin){
+            entityManager.getTransaction().begin();
+            Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
+            User u = (User)query.getSingleResult();
+            entityManager.getTransaction().commit();
+            return u;
+        }
+        else{
+            entityManager.getTransaction().begin();
+            Query query = entityManager.createQuery("SELECT u.name , u.username , u.email , u.phonenum FROM User u WHERE u.username=:username and u.del = false").setParameter("username",username);
+            User u = (User)query.getSingleResult();
+            entityManager.getTransaction().commit();
+            return u;
+        }
+
 
     }
 
@@ -121,11 +131,11 @@ public class UserRepo {
 
     }
 
-    public void updateUserPassword(String username , String newpass){
+    public void updateUserPassword (String username , String newpass)throws NoSuchAlgorithmException, UnsupportedEncodingException{
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
-        u.setPassword(newpass);
+        u.setPassword(sha256(newpass));
         entityManager.getTransaction().commit();
 
     }
