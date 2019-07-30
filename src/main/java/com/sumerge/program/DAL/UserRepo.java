@@ -6,12 +6,16 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.List;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
+
 
 public class UserRepo {
     EntityManager entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
@@ -38,6 +42,7 @@ public class UserRepo {
 
     }
 
+
     public User findByUsername(String username , boolean admin){
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
@@ -47,10 +52,21 @@ public class UserRepo {
 
     }
 
-    public void addUser(User u){
+    public  String sha256(String input) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        MessageDigest md5 = MessageDigest.getInstance("SHA-256");
+        byte[] digest = md5.digest(input.getBytes("UTF-8"));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < digest.length; ++i) {
+            sb.append(Integer.toHexString((digest[i] & 0xFF) | 0x100).substring(1, 3));
+        }
+        return sb.toString();
+    }
+
+    public void addUser (User u) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
         EntityTransaction entityTransaction = entityManager.getTransaction();
         entityTransaction.begin();
+        u.setPassword(sha256(u.getPassword()));
         entityManager.persist(u);
         entityManager.getTransaction().commit();
 
