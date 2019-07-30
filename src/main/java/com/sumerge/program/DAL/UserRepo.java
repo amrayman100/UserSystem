@@ -86,6 +86,7 @@ public class UserRepo {
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
+        u.setDel(false);
         entityManager.getTransaction().commit();
 
 

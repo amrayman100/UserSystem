@@ -161,7 +161,7 @@ public class UserResources {
     @Path("test3")
     public Response addtogroup() {
         try {
-            repo2.removefromGroup("amr_100",1);
+            repo2.addtoGroup("amr_100",1);
             return Response.ok().
                     build();
         } catch (Exception e) {
