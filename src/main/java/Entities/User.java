@@ -6,7 +6,8 @@ import java.util.List;
 @Entity
 @Table(name = "user")
 @NamedQueries({
-        @NamedQuery(name="User.findAll", query="SELECT e FROM User  e")
+        @NamedQuery(name="User.findAll", query="SELECT e FROM User  e"),
+        @NamedQuery(name = "User.findallBasic" , query = "SELECT e.name, e.username , e.email FROM User e WHERE e.del = false ")
 
 })
 public class User  implements Serializable{
