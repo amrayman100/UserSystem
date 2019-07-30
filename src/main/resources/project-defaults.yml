@@ -22,7 +22,8 @@ swarm:
               flag: required
               module-options:
                 dsJndiName: java:jboss/datasources/studentdb
-
+                hashAlgorithm: SHA-256
+                hashEncoding: HEX
                 principalsQuery: SELECT PASSWORD FROM USER WHERE USERNAME=?
                 rolesQuery: SELECT ROLE, 'Roles' FROM USER WHERE USERNAME=?
   datasources:
