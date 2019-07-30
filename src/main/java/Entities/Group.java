@@ -6,7 +6,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.util.List;
 @Entity
-@Table(name = "workgroup")
+@Table(name = "workgroup")@NamedQueries({
+        @NamedQuery(name="Group.findAll", query="SELECT e FROM Group  e")
+
+
+})
+
 public class Group implements Serializable {
 
     @Id
