@@ -135,7 +135,7 @@ public class UserController {
     public Response updateEmail(@PathParam("username") String username , @PathParam("newemail") String newemail ) {
 
         if(!securityContext.isUserInRole("admin") && !username.equalsIgnoreCase(securityContext.getUserPrincipal().toString())){
-            return Response.status(Response.Status.fromStatusCode(401)).entity("You do not have permissions to do this action.").build();
+            return Response.status(Response.Status.fromStatusCode(401)).build();
         }
 
         try {
@@ -151,11 +151,11 @@ public class UserController {
     }
 
     @PUT
-    @Path("/password/{username}/{password}")
-    public Response updatePassword(@PathParam("username") String username , @PathParam("password") String password ) {
+    @Path("/password/{username}/")
+    public Response updatePassword(@PathParam("username") String username , String password ) {
 
         if(!securityContext.isUserInRole("admin") && !username.equalsIgnoreCase(securityContext.getUserPrincipal().toString())){
-            return Response.status(Response.Status.fromStatusCode(401)).entity("You do not have permissions to do this action.").build();
+            return Response.status(Response.Status.fromStatusCode(401)).build();
         }
 
         try {
@@ -176,7 +176,7 @@ public class UserController {
     @Path("/group/{username}/{groupid}")
     public Response addtogroup(@PathParam("username") String username ,@PathParam("groupid") int groupid  ) {
         if(!securityContext.isUserInRole("admin")){
-            return Response.status(Response.Status.fromStatusCode(401)).entity("You do not have permissions to do this action.").build();
+            return Response.status(Response.Status.fromStatusCode(401)).build();
         }
         try {
             repo2.addtoGroup(username,groupid);
@@ -194,7 +194,7 @@ public class UserController {
     @Path("/removefromgroup/{username}/{groupid}")
     public Response removefromGroup(@PathParam("username") String username ,@PathParam("groupid") int groupid  ) {
         if(!securityContext.isUserInRole("admin")){
-            return Response.status(Response.Status.fromStatusCode(401)).entity("You do not have permissions to do this action.").build();
+            return Response.status(Response.Status.fromStatusCode(401)).build();
         }
         try {
             repo2.removefromGroup(username,groupid);
