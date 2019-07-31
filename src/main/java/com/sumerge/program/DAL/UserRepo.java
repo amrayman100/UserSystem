@@ -17,11 +17,17 @@ import javax.transaction.Transactional;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 
+import com.sumerge.program.UserResources;
+import org.apache.log4j.Logger;
+
+
 
 public class UserRepo {
     EntityManager entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
+    static private AuditLogRepo AuditLogger = new AuditLogRepo();
+    private static final Logger LOGGER = Logger.getLogger(UserResources.class.getName());
     public List<User> getAll(boolean admin){
-
+        LOGGER.debug("Getting user list.");
         if(admin){
             entityManager.getTransaction().begin();
             TypedQuery<User> query =
@@ -89,11 +95,12 @@ public class UserRepo {
         return sb.toString();
     }
 
-    public void addUser (User u) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    public void addUser (User u , String username) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
         EntityTransaction entityTransaction = entityManager.getTransaction();
         entityTransaction.begin();
         u.setPassword(sha256(u.getPassword()));
+        AuditLogger.addLog(u,username,"Add User");
         entityManager.persist(u);
         entityManager.getTransaction().commit();
 
@@ -104,6 +111,7 @@ public class UserRepo {
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
+        AuditLogger.addLog(u,username,"Delete User");
         u.setDel(true);
         entityManager.getTransaction().commit();
 
@@ -113,68 +121,75 @@ public class UserRepo {
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
+        AuditLogger.addLog(u,username,"Undo Delete User");
         u.setDel(false);
         entityManager.getTransaction().commit();
 
 
     }
 
-    public void updateUserName(String username,String newusername){
+    public void updateUserName(String username,String newusername , String author){
 
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
         u.setUsername(newusername);
         u.setUsername(newusername);
+        AuditLogger.addLog(u,author,"Update User name");
         entityManager.getTransaction().commit();
 
     }
 
-    public void updateUserEmail(String username , String newemail){
+    public void updateUserEmail(String username , String newemail , String author){
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
         u.setEmail(newemail);
+        AuditLogger.addLog(u,author,"Update Email");
         entityManager.getTransaction().commit();
 
     }
 
-    public void updateUserPhone(String username , String newphone){
+    public void updateUserPhone(String username , String newphone , String author){
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
         u.setPhonenum(newphone);
+        AuditLogger.addLog(u,author,"Update Phone number");
         entityManager.getTransaction().commit();
 
     }
 
-    public void updateUserPassword (String username , String newpass)throws NoSuchAlgorithmException, UnsupportedEncodingException{
+    public void updateUserPassword (String username , String newpass , String author)throws NoSuchAlgorithmException, UnsupportedEncodingException{
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
         u.setPassword(sha256(newpass));
+        AuditLogger.addLog(u,author,"Update Password");
         entityManager.getTransaction().commit();
 
     }
 
-    public void addtoGroup(String username , int groupid){
+    public void addtoGroup(String username , int groupid , String author){
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
         Group group = entityManager.find(Group.class, groupid);
         List<Group> usergroups = u.getGroups();
         usergroups.add(group);
+        AuditLogger.addLog(u,author,"Added to group");
         entityManager.getTransaction().commit();
 
     }
 
-    public void removefromGroup(String username , int groupid){
+    public void removefromGroup(String username , int groupid , String author){
         entityManager.getTransaction().begin();
         Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
         User u = (User)query.getSingleResult();
         Group group = entityManager.find(Group.class, groupid);
         List<Group> usergroups = u.getGroups();
         if(usergroups.contains(group))  usergroups.remove(group);
+        AuditLogger.addLog(u,author,"Remove from group");
         entityManager.getTransaction().commit();
 
     }

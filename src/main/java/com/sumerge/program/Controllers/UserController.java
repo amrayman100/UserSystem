@@ -1,4 +1,6 @@
 package com.sumerge.program.Controllers;
+import Entities.AuditLog;
+import com.sumerge.program.DAL.AuditLogRepo;
 import com.sumerge.program.DAL.JPAUtil;
 
 import javax.ejb.EJB;
@@ -10,7 +12,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 import static java.util.logging.Level.SEVERE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import com.sumerge.program.DAL.UserRepo;
@@ -24,12 +26,15 @@ import javax.ws.rs.core.SecurityContext;
 @Path("user")
 public class UserController {
     static private com.sumerge.program.DAL.UserRepo repo2 = new com.sumerge.program.DAL.UserRepo();
+    static private AuditLogRepo AuditLogger = new AuditLogRepo();
     private static final Logger LOGGER = Logger.getLogger(UserResources.class.getName());
     @Context
     private SecurityContext securityContext;
+    private String loggeduser = securityContext.getUserPrincipal().toString();
 
     @GET
     public Response getAll() {
+        LOGGER.debug("Entering create user REST method.");
         System.out.println("Name: "+securityContext.getUserPrincipal().toString());
         System.out.println("Auth Scheme : "+securityContext.isUserInRole("admin"));
         try {
@@ -38,7 +43,7 @@ public class UserController {
                     build();
 
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+            //LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -56,7 +61,7 @@ public class UserController {
                     build();
 
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+           // LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -69,11 +74,11 @@ public class UserController {
             if (u.getId() == -1)
                 throw new IllegalArgumentException("Can't edit user since it does not exist in the database");
 
-            repo2.addUser(u);
+            repo2.addUser(u,loggeduser);
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+            //LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -88,7 +93,7 @@ public class UserController {
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+           // LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -103,7 +108,7 @@ public class UserController {
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+           // LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -111,19 +116,20 @@ public class UserController {
     }
 
     @PUT
-    @Path("/name/{username}/{newusername}")
-    public Response updateName(@PathParam("username") String username , @PathParam("newusername") String newusername ) {
+    @Path("/username/{username}/")
+    public Response updateName(@PathParam("username") String username ,String newusername ) {
 
         if(!securityContext.isUserInRole("admin") && !username.equalsIgnoreCase(securityContext.getUserPrincipal().toString())){
             return Response.status(Response.Status.fromStatusCode(401)).entity("You do not have permissions to do this action.").build();
         }
 
         try {
-            repo2.updateUserName(username,newusername);
+
+            repo2.updateUserName(username,newusername,loggeduser);
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+            //LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -131,19 +137,19 @@ public class UserController {
     }
 
     @PUT
-    @Path("/email/{username}/{newemail}")
-    public Response updateEmail(@PathParam("username") String username , @PathParam("newemail") String newemail ) {
+    @Path("/email/{username}")
+    public Response updateEmail(@PathParam("username") String username , String newemail ) {
 
         if(!securityContext.isUserInRole("admin") && !username.equalsIgnoreCase(securityContext.getUserPrincipal().toString())){
             return Response.status(Response.Status.fromStatusCode(401)).build();
         }
 
         try {
-            repo2.updateUserEmail(username,newemail);
+            repo2.updateUserEmail(username,newemail,loggeduser);
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+           // LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -159,11 +165,11 @@ public class UserController {
         }
 
         try {
-            repo2.updateUserPassword(username,password);
+            repo2.updateUserPassword(username,password,loggeduser );
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+          //  LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -172,18 +178,36 @@ public class UserController {
 
 
 
-    @PUT
+    @POST
     @Path("/group/{username}/{groupid}")
     public Response addtogroup(@PathParam("username") String username ,@PathParam("groupid") int groupid  ) {
         if(!securityContext.isUserInRole("admin")){
             return Response.status(Response.Status.fromStatusCode(401)).build();
         }
         try {
-            repo2.addtoGroup(username,groupid);
+            repo2.addtoGroup(username,groupid,loggeduser );
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+         //   LOGGER.log(SEVERE, e.getMessage(), e);
+            return Response.serverError().
+                    entity(e.getClass() + ": " + e.getMessage()).
+                    build();
+        }
+    }
+
+    @DELETE
+    @Path("/group/{username}/{groupid}")
+    public Response removefromGroup(@PathParam("username") String username ,@PathParam("groupid") int groupid  ) {
+        if(!securityContext.isUserInRole("admin")){
+            return Response.status(Response.Status.fromStatusCode(401)).build();
+        }
+        try {
+            repo2.removefromGroup(username,groupid,loggeduser );
+            return Response.ok().
+                    build();
+        } catch (Exception e) {
+          //  LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
@@ -191,17 +215,18 @@ public class UserController {
     }
 
     @PUT
-    @Path("/removefromgroup/{username}/{groupid}")
-    public Response removefromGroup(@PathParam("username") String username ,@PathParam("groupid") int groupid  ) {
+    @Path("/group/{username}/{currgroupid}/{targetgroupid}")
+    public Response movetoGroup(@PathParam("username") String username , @PathParam("currgroupid") int currgroupid ,@PathParam("targetgroupid") int targetgroupid ) {
         if(!securityContext.isUserInRole("admin")){
             return Response.status(Response.Status.fromStatusCode(401)).build();
         }
         try {
-            repo2.removefromGroup(username,groupid);
+            repo2.removefromGroup(username,currgroupid,loggeduser);
+            repo2.addtoGroup(username,targetgroupid,loggeduser );
             return Response.ok().
                     build();
         } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
+            //  LOGGER.log(SEVERE, e.getMessage(), e);
             return Response.serverError().
                     entity(e.getClass() + ": " + e.getMessage()).
                     build();
