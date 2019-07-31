@@ -13,6 +13,7 @@ import java.security.Principal;
 import java.util.List;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
+import javax.transaction.Transactional;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 
@@ -42,23 +43,39 @@ public class UserRepo {
 
     }
 
-
-    public User findByUsername(String username , boolean admin){
+    @Transactional
+    public Object findByUsername(String username , boolean admin){
         if(admin){
-            entityManager.getTransaction().begin();
-            Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
-            entityManager.getTransaction().commit();
-            return u;
+            try{
+                entityManager.getTransaction().begin();
+                Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
+                User u = (User)query.getSingleResult();
+
+                return u;
+            }
+            catch(Exception e){
+                entityManager.getTransaction().rollback();
+                e.getMessage();
+                return null;
+            }
+
         }
         else{
-            entityManager.getTransaction().begin();
-            Query query = entityManager.createQuery("SELECT u.name , u.username , u.email , u.phonenum FROM User u WHERE u.username=:username and u.del = false").setParameter("username",username);
-            User u = (User)query.getSingleResult();
-            entityManager.getTransaction().commit();
-            return u;
-        }
 
+            try{
+                entityManager.getTransaction().begin();
+                Query query = entityManager.createQuery("SELECT u.name , u.username , u.email , u.phonenum FROM User u WHERE u.username=:username and u.del = false").setParameter("username",username);
+                Object u = query.getSingleResult();
+                entityManager.getTransaction().commit();
+                return u;
+            }
+            catch(Exception e){
+                entityManager.getTransaction().rollback();
+                e.getMessage();
+                return null;
+            }
+
+        }
 
     }
 
