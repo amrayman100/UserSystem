@@ -1,4 +1,4 @@
-package com.sumerge.program.DAL;
+package com.sumerge.program.dal;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;

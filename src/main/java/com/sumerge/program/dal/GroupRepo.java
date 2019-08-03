@@ -1,13 +1,10 @@
-package com.sumerge.program.DAL;
-import Entities.Group;
-import Entities.User;
+package com.sumerge.program.dal;
+import entities.Group;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class GroupRepo {
@@ -17,8 +14,8 @@ public class GroupRepo {
 
             entityManager.getTransaction().begin();
             TypedQuery<Group> query =
-                    entityManager.createNamedQuery("Group.findAll", Entities.Group.class);
-            List<Entities.Group> results = query.getResultList();
+                    entityManager.createNamedQuery("Group.findAll", entities.Group.class);
+            List<entities.Group> results = query.getResultList();
             entityManager.getTransaction().commit();
             return results;
 

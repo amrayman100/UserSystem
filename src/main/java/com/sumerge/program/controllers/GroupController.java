@@ -1,20 +1,12 @@
-package com.sumerge.program.Controllers;
-import com.sumerge.program.DAL.JPAUtil;
+package com.sumerge.program.controllers;
 
-import javax.ejb.EJB;
 import javax.enterprise.context.RequestScoped;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import java.util.List;
 import java.util.logging.Logger;
 import static java.util.logging.Level.SEVERE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import com.sumerge.program.DAL.UserRepo;
-import com.sumerge.program.UserResources;
 
 import javax.ws.rs.core.SecurityContext;
 
@@ -23,8 +15,8 @@ import javax.ws.rs.core.SecurityContext;
 @Consumes(APPLICATION_JSON)
 @Path("group")
 public class GroupController {
-    static private com.sumerge.program.DAL.GroupRepo repo2 = new com.sumerge.program.DAL.GroupRepo();
-    private static final Logger LOGGER = Logger.getLogger(UserResources.class.getName());
+    static private com.sumerge.program.dal.GroupRepo repo2 = new com.sumerge.program.dal.GroupRepo();
+    private static final Logger LOGGER = Logger.getLogger(GroupController.class.getName());
     @Context
     private SecurityContext securityContext;
 
@@ -63,7 +55,7 @@ public class GroupController {
     }
 
     @POST
-    public Response AddGroup(Entities.Group  u) {
+    public Response AddGroup(entities.Group  u) {
         try {
             if (u.getId() == -1)
                 throw new IllegalArgumentException("Can't edit user since it does not exist in the database");
@@ -80,12 +72,13 @@ public class GroupController {
     }
 
     @DELETE
-    public Response DeleteGroup(Entities.Group  u) {
+    @Path("{id}")
+    public Response DeleteGroup(@PathParam("id") int id) {
         try {
-            if (u.getId() == -1)
+            if (id == -1)
                 throw new IllegalArgumentException("Can't edit user since it does not exist in the database");
 
-            repo2.deleteGroup(u.getId());
+            repo2.deleteGroup(id);
             return Response.ok().
                     build();
         } catch (Exception e) {

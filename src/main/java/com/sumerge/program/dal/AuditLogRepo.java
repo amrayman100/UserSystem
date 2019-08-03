@@ -1,26 +1,14 @@
-package com.sumerge.program.DAL;
+package com.sumerge.program.dal;
 
-import Entities.AuditLog;
-import Entities.User;
+import entities.AuditLog;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
+import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.List;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.transaction.Transactional;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
+
 public class AuditLogRepo {
+
     EntityManager entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
 
     public void addLog (Object o , String author , String name ) {
