@@ -1,8 +1,7 @@
-package Entities;
+package entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.util.List;
 @Entity

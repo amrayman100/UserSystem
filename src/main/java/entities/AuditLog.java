@@ -1,12 +1,9 @@
-package Entities;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+package entities;
 
-import javax.json.Json;
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.List;
+
 @Entity
 @Table(name = "auditlog")@NamedQueries({
         @NamedQuery(name="AuditLog.findAll", query="SELECT e FROM AuditLog   e")
