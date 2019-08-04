@@ -24,12 +24,12 @@ import java.util.List;
 @RunWith(JUnit4.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class GroupIT {
-    private static GroupModel newGroup;
+    private static GroupModel newGroup1;
 
 
     @BeforeClass
     public static void init() {
-        newGroup = new GroupModel("test"+System.currentTimeMillis(),"desc"+System.currentTimeMillis());
+        newGroup1 = new GroupModel("test"+System.currentTimeMillis(),"desc"+System.currentTimeMillis());
     }
 
     @Test
@@ -54,10 +54,10 @@ public class GroupIT {
 
         Response response  = client.target("http://localhost:8880/users/group/").register(feature).register(JacksonJsonProvider.class)
                 .request(MediaType.APPLICATION_JSON)
-                .post(Entity.entity(newGroup,MediaType.APPLICATION_JSON));
+                .post(Entity.entity(newGroup1,MediaType.APPLICATION_JSON));
         Assert.assertEquals(200, response.getStatus());
 
-        response  = client.target("http://localhost:8880/users/group/"+newGroup.getName()).register(feature).register(JacksonJsonProvider.class)
+        response  = client.target("http://localhost:8880/users/group/"+newGroup1.getName()).register(feature).register(JacksonJsonProvider.class)
                 .request(MediaType.APPLICATION_JSON)
                 .get();
         Assert.assertEquals(200, response.getStatus());
