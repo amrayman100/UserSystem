@@ -20,12 +20,18 @@ public class Group implements Serializable {
     private String name;
     @Column(name = "DESCRIPTION")
     private String desc;
+
+    public Group(String name, String desc) {
+        this.name = name;
+        this.desc = desc;
+    }
+
     @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "group_members",
-            joinColumns = @JoinColumn(name = "USERID"),
-            inverseJoinColumns = @JoinColumn(name = "GROUPID"))
+            joinColumns = @JoinColumn(name = "GROUPID"),
+            inverseJoinColumns = @JoinColumn(name = "USERID"))
     List<User> users;
 
 

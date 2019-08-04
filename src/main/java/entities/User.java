@@ -29,11 +29,23 @@ public class User  implements Serializable{
     @Column(name = "DEL")
     private boolean del;
 
+    public User(String name, String username, String password, String role, String email, String phonenum) {
+        this.name = name;
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.email = email;
+        this.phonenum = phonenum;
+        this.del = false;
+    }
+
+    public User(){};
+
     @ManyToMany
     @JoinTable(
             name = "group_members",
-            joinColumns = @JoinColumn(name = "GROUPID"),
-            inverseJoinColumns = @JoinColumn(name = "USERID"))
+            joinColumns = @JoinColumn(name = "USERID"),
+            inverseJoinColumns = @JoinColumn(name = "GROUPID"))
     List<Group> groups;
 
     public int getId() {
