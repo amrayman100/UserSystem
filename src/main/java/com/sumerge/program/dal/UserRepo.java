@@ -1,4 +1,5 @@
 package com.sumerge.program.dal;
+import com.sumerge.program.exceptions.WrongFormatException;
 import entities.User;
 import entities.Group;
 
@@ -12,7 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.transaction.Transactional;
-
+import com.sumerge.program.viewmodels.UserModel;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.sumerge.program.exceptions.NotFoundException;
 import org.apache.log4j.Logger;
@@ -21,7 +22,7 @@ import org.apache.log4j.Logger;
 public class UserRepo {
 
 
-    EntityManager entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
+    public EntityManager entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
     static private AuditLogRepo AuditLogger = new AuditLogRepo();
     private static final Logger LOGGER = Logger.getLogger(UserRepo.class.getName());
 
@@ -30,7 +31,6 @@ public class UserRepo {
         LOGGER.debug("Getting user list.");
 
         if(admin){
-
             try{
                 entityManager.getTransaction().begin();
                 TypedQuery<User> query =
@@ -69,38 +69,41 @@ public class UserRepo {
     }
 
     @Transactional
-    public Object findByUsername(String username , boolean admin){
+    public Object findByUsername(String username , boolean admin) throws NotFoundException {
+        LOGGER.debug("Finding by username");
+
         Object u = null;
         if(admin){
             try{
                 entityManager.getTransaction().begin();
                 Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
                 u = (User)query.getSingleResult();
-
-                return u;
-            }
-            catch(Exception e){
-                entityManager.getTransaction().rollback();
-                e.getMessage();
-
-                return u;
-            }
-
-        }
-
-        else{
-            try{
-                entityManager.getTransaction().begin();
-                Query query = entityManager.createQuery("SELECT u.name , u.username , u.email , u.phonenum FROM User u WHERE u.username=:username and u.del = false").setParameter("username",username);
-                 u = query.getSingleResult();
-
-
                 entityManager.getTransaction().commit();
                 return u;
             }
             catch(Exception e){
                 entityManager.getTransaction().rollback();
                 e.getMessage();
+                LOGGER.debug("User not found");
+                return u;
+            }
+
+
+        }
+        else{
+            try{
+                entityManager.getTransaction().begin();
+                Query query = entityManager.createQuery("SELECT u.name , u.username , u.email , u.phonenum FROM User u WHERE u.username=:username and u.del = false").setParameter("username",username);
+                u = query.getSingleResult();
+                //UserModel f = (UserModel) u;
+                entityManager.getTransaction().commit();
+                return u;
+            }
+            catch(Exception e){
+                entityManager.getTransaction().rollback();
+
+                e.getMessage();
+                LOGGER.debug("User not found");
                 return u;
             }
 
@@ -117,58 +120,71 @@ public class UserRepo {
         }
         return sb.toString();
     }
-  //  @Transactional(rollbackOn = Exception.class)
-    public void addUser (User u , String username) throws NotFoundException {
 
-        try{
-            entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
-            EntityTransaction entityTransaction = entityManager.getTransaction();
-            entityTransaction.begin();
-            u.setPassword(sha256(u.getPassword()));
-            entityManager.persist(u);
-            AuditLogger.addLog(u,username,"Add User");
-            entityManager.getTransaction().commit();
-        }
+    public void addUser (UserModel u , String username) throws NotFoundException, WrongFormatException, UnsupportedEncodingException, NoSuchAlgorithmException {
+        LOGGER.debug("Add User");
+            User o = null;
+            entityManager.getTransaction().begin();
 
-
-        catch(Exception e){
-            System.out.println("EX   " +e.getClass());
-            if(e instanceof UnrecognizedPropertyException){
-                throw new NotFoundException("User with the specified username can not be found");
+           if(u.getEmail().equalsIgnoreCase("")||u.getName().equalsIgnoreCase("")||u.getNumber().equalsIgnoreCase("")||u.getPassword().equalsIgnoreCase("")||u.getRole().equalsIgnoreCase("")||u.getUsername().equalsIgnoreCase("")){
+                throw new WrongFormatException("Missing Parameter");
             }
-            entityManager.getTransaction().rollback();
-            e.getMessage();
 
-        }
+            try{
+              Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",u.getUsername());
+              o = (User)query.getSingleResult();
+
+            }
+            catch(Exception e){
+                LOGGER.debug("User with this username already exists");
+            }
+
+            if(o!=null){
+                if (o.getUsername().equalsIgnoreCase(u.getUsername())) {
+                    entityManager.getTransaction().rollback();
+                    throw new WrongFormatException("A User with this username exists");
+                }
+            }
+
+            User newUser = new User(u.getName(),u.getUsername(),u.getPassword(),u.getRole(),u.getEmail(),u.getNumber());
+            newUser.setPassword(sha256(newUser.getPassword()));
+            entityManager.persist(newUser);
+            AuditLogger.addLog(newUser,username,"Add User");
+            entityManager.getTransaction().commit();
 
     }
     @Transactional(rollbackOn = Exception.class)
     public void deleteUser(String username) throws NotFoundException {
+        LOGGER.debug("Delete User");
         User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-             u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             AuditLogger.addLog(u,username,"Delete User");
             u.setDel(true);
             entityManager.getTransaction().commit();
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
+
             e.getMessage();
 
             if(u==null){
+                LOGGER.debug("User not found");
                 throw new NotFoundException("User with the specified username can not be found");
             }
         }
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void undoDeleteUser(String username){
+    public void undoDeleteUser(String username) throws NotFoundException {
+        LOGGER.debug("Undo Delete User");
+        User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             AuditLogger.addLog(u,username,"Undo Delete User");
             u.setDel(false);
             entityManager.getTransaction().commit();
@@ -176,19 +192,26 @@ public class UserRepo {
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
+
             e.getMessage();
+
+            if(u==null){
+                LOGGER.debug("User not found");
+                throw new NotFoundException("User with the specified username can not be found");
+            }
 
         }
 
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void updateUserName(String username,String newusername , String author){
-
+    public void updateUserName(String username,String newusername , String author) throws NotFoundException {
+        LOGGER.debug("Update Username");
+        User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             u.setUsername(newusername);
             u.setUsername(newusername);
             AuditLogger.addLog(u,author,"Update User name");
@@ -197,7 +220,12 @@ public class UserRepo {
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
+
             e.getMessage();
+            if(u==null){
+                throw new NotFoundException("User with the specified username can not be found");
+            }
+
 
         }
 
@@ -205,12 +233,12 @@ public class UserRepo {
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void updateUserEmail(String username , String newemail , String author){
-
+    public void updateUserEmail(String username , String newemail , String author) throws NotFoundException {
+        User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             u.setEmail(newemail);
             AuditLogger.addLog(u,author,"Update Email");
             entityManager.getTransaction().commit();
@@ -218,6 +246,10 @@ public class UserRepo {
         catch(Exception e){
             entityManager.getTransaction().rollback();
             e.getMessage();
+            if(u==null){
+                LOGGER.debug("User not found");
+                throw new NotFoundException("User with the specified username can not be found");
+            }
 
         }
 
@@ -225,47 +257,55 @@ public class UserRepo {
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void updateUserPhone(String username , String newphone , String author){
+    public void updateUserPhone(String username , String newphone , String author) throws NotFoundException {
+        User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             u.setPhonenum(newphone);
             AuditLogger.addLog(u,author,"Update Phone number");
             entityManager.getTransaction().commit();
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
-            e.getMessage();
+            if(u==null){
+                LOGGER.debug("User not found");
+                throw new NotFoundException("User with the specified username can not be found");
+            }
 
         }
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void updateUserPassword (String username , String newpass , String author)throws NoSuchAlgorithmException, UnsupportedEncodingException{
-
+    public void updateUserPassword (String username , String newpass , String author) throws NoSuchAlgorithmException, UnsupportedEncodingException, NotFoundException {
+        User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             u.setPassword(sha256(newpass));
             AuditLogger.addLog(u,author,"Update Password");
             entityManager.getTransaction().commit();
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
-            e.getMessage();
+            if(u==null){
+                LOGGER.debug("User not found");
+                throw new NotFoundException("User with the specified username can not be found");
+            }
+
 
         }
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void addtoGroup(String username , int groupid , String author){
-
+    public void addtoGroup(String username , int groupid , String author) throws NotFoundException {
+        /*User u = null;
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+            u = (User)query.getSingleResult();
             Group group = entityManager.find(Group.class, groupid);
             List<Group> usergroups = u.getGroups();
             usergroups.add(group);
@@ -274,19 +314,33 @@ public class UserRepo {
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
-            e.getMessage();
+            if(u==null){
+                LOGGER.debug("User not found");
+                throw new NotFoundException("User with the specified username can not be found");
+            }
 
-        }
+
+        }*/
+
+        entityManager.getTransaction().begin();
+        Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
+        User u = (User)query.getSingleResult();
+        Group group = entityManager.find(Group.class, groupid);
+        List<Group> usergroups = u.getGroups();
+        usergroups.add(group);
+        AuditLogger.addLog(u,author,"Added to group");
+        entityManager.getTransaction().commit();
 
 
     }
     @Transactional(rollbackOn = Exception.class)
-    public void removefromGroup(String username , int groupid , String author){
+    public void removefromGroup(String username , int groupid , String author) throws NotFoundException {
+        User u = null;
 
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery("SELECT u FROM User u WHERE u.username=:username").setParameter("username",username);
-            User u = (User)query.getSingleResult();
+             u = (User)query.getSingleResult();
             Group group = entityManager.find(Group.class, groupid);
             List<Group> usergroups = u.getGroups();
             if(usergroups.contains(group))  usergroups.remove(group);
@@ -295,7 +349,11 @@ public class UserRepo {
         }
         catch(Exception e){
             entityManager.getTransaction().rollback();
-            e.getMessage();
+            if(u==null){
+
+                throw new NotFoundException("User with the specified username can not be found");
+            }
+
 
         }
 

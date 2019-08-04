@@ -1,5 +1,9 @@
 package com.sumerge.program.controllers;
 
+import com.sumerge.program.exceptions.NotFoundException;
+import com.sumerge.program.exceptions.WrongFormatException;
+import com.sumerge.program.viewmodels.GroupModel;
+
 import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -31,62 +35,50 @@ public class GroupController {
 
         } catch (Exception e) {
             LOGGER.log(SEVERE, e.getMessage(), e);
+            repo2.entityManager.getTransaction().rollback();
             return Response.serverError().
-                    entity(e.getClass() + ": " + e.getMessage()).
+                    entity(e.getMessage()).
                     build();
         }
     }
 
     @GET
     @Path("{username}")
-    public Response getGroup(@PathParam("username") String group) {
+    public Response getGroup(@PathParam("username") String group) throws NotFoundException {
 
-        try {
+
+            Object u = repo2.findByName(group,securityContext.isUserInRole("admin"));
+            if(u==null) {
+                throw new NotFoundException("Group with the specified name can not be found");
+            }
+
             return Response.ok().
-                    entity( repo2.findByName(group,securityContext.isUserInRole("admin"))).
+                    entity(u).
                     build();
 
-        } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
-            return Response.serverError().
-                    entity(e.getClass() + ": " + e.getMessage()).
-                    build();
-        }
+
     }
 
     @POST
-    public Response AddGroup(entities.Group  u) {
-        try {
-            if (u.getId() == -1)
-                throw new IllegalArgumentException("Can't edit user since it does not exist in the database");
+    public Response AddGroup(GroupModel u) throws WrongFormatException {
 
-            repo2.addGroup(u);
+            repo2.addGroup(u,securityContext.getUserPrincipal().toString());
             return Response.ok().
                     build();
-        } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
-            return Response.serverError().
-                    entity(e.getClass() + ": " + e.getMessage()).
-                    build();
-        }
+
     }
 
     @DELETE
     @Path("{id}")
-    public Response DeleteGroup(@PathParam("id") int id) {
-        try {
-            if (id == -1)
-                throw new IllegalArgumentException("Can't edit user since it does not exist in the database");
+    public Response DeleteGroup(@PathParam("id") int id) throws WrongFormatException {
 
-            repo2.deleteGroup(id);
+        if(id == 1){
+            throw new WrongFormatException("Can not delete default group");
+        }
+            repo2.deleteGroup(id,securityContext.getUserPrincipal().toString());
             return Response.ok().
                     build();
-        } catch (Exception e) {
-            LOGGER.log(SEVERE, e.getMessage(), e);
-            return Response.serverError().
-                    entity(e.getClass() + ": " + e.getMessage()).
-                    build();
-        }
+
     }
 
 

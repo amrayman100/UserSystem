@@ -10,6 +10,6 @@ public class NotFoundMapper implements ExceptionMapper<NotFoundException>{
     @Override
     public Response toResponse(NotFoundException exception)
     {
-        return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
+        return Response.status(404).entity(exception.getMessage()).build();
     }
 }
