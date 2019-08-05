@@ -8,6 +8,8 @@ import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 import static java.util.logging.Level.SEVERE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -73,13 +75,47 @@ public class GroupController {
     public Response DeleteGroup(@PathParam("id") int id) throws WrongFormatException {
 
         if(id == 1){
-            throw new WrongFormatException("Can not delete default group");
+            return Response.status(Response.Status.fromStatusCode(401)).build();
         }
             repo2.deleteGroup(id,securityContext.getUserPrincipal().toString());
             return Response.ok().
                     build();
 
     }
+
+    @PUT
+    @Path("/name/{id}/")
+    public Response updateGroupName(@PathParam("id") int id , String name ) throws NotFoundException, WrongFormatException, UnsupportedEncodingException, NoSuchAlgorithmException {
+
+        if(!securityContext.isUserInRole("admin")){
+            return Response.status(Response.Status.fromStatusCode(401)).build();
+        }
+
+        repo2.updateGroupName(id,name,securityContext.getUserPrincipal().toString());
+        return Response.ok().
+                build();
+
+
+    }
+
+    @PUT
+    @Path("/desc/{id}/")
+    public Response updateGroupDesc(@PathParam("id") int id , String desc ) throws NotFoundException, WrongFormatException, UnsupportedEncodingException, NoSuchAlgorithmException {
+
+        if(!securityContext.isUserInRole("admin")){
+            return Response.status(Response.Status.fromStatusCode(401)).build();
+        }
+
+        repo2.updateGroupDesc(id,desc,securityContext.getUserPrincipal().toString());
+        return Response.ok().
+                build();
+
+
+    }
+
+
+
+
 
 
 
