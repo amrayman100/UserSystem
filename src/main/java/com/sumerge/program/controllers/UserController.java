@@ -80,7 +80,7 @@ public class UserController {
     @Path("{username}")
     public Response deleteUser2(@PathParam("username") String username) throws NotFoundException , WrongFormatException{
         if(username.equalsIgnoreCase("admin")){
-            throw new WrongFormatException("Can not delete admin");
+            return Response.status(Response.Status.fromStatusCode(401)).build();
         }
         loggeduser = securityContext.getUserPrincipal().toString();
 
@@ -103,7 +103,7 @@ public class UserController {
 
     @PUT
     @Path("/username/{username}/")
-    public Response updateName(@PathParam("username") String username ,String newusername ) throws NotFoundException , WrongFormatException{
+    public Response updateUserName(@PathParam("username") String username ,String newusername ) throws NotFoundException , WrongFormatException{
         loggeduser = securityContext.getUserPrincipal().toString();
         if(!securityContext.isUserInRole("admin") && !username.equalsIgnoreCase(securityContext.getUserPrincipal().toString())){
             return Response.status(Response.Status.fromStatusCode(401)).build();
@@ -130,6 +130,23 @@ public class UserController {
                     build();
 
     }
+
+    @PUT
+    @Path("/phone/{username}")
+    public Response updatePhone(@PathParam("username") String username , String phone ) throws NotFoundException , WrongFormatException {
+        loggeduser = securityContext.getUserPrincipal().toString();
+
+        if(!securityContext.isUserInRole("admin") && !username.equalsIgnoreCase(securityContext.getUserPrincipal().toString())){
+            return Response.status(Response.Status.fromStatusCode(401)).build();
+        }
+
+
+        repo2.updateUserPhone(username,phone,loggeduser);
+        return Response.ok().
+                build();
+
+    }
+
 
     @PUT
     @Path("/password/{username}/")

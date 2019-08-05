@@ -151,6 +151,18 @@ public class UserIT {
         Assert.assertEquals(user.getEmail(), "max@email.com");
         newUser.setUsername(updatedUser);
 
+        response  = client.target("http://localhost:8880/users/user/phone/"+newUser.getUsername()).register(feature).register(JacksonJsonProvider.class)
+                .request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity("8967",MediaType.APPLICATION_JSON));
+        response2  = client.target("http://localhost:8880/users/user/"+updatedUser).register(feature).register(JacksonJsonProvider.class)
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+        Assert.assertEquals(200, response.getStatus());
+        user = response2.readEntity(User.class);
+        Assert.assertEquals(user.getPhonenum(), "8967");
+        newUser.setUsername(updatedUser);
+
+
     }
 
 
@@ -198,8 +210,31 @@ public class UserIT {
 
     }
 
+    @Test
+    public void test10_DeleteAdmin(){
 
+        Client client= ClientBuilder.newClient();
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin", "admin");
+        client.property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION, true);
+        Response response  = client.target("http://localhost:8880/users/user/"+"admin").register(feature).register(JacksonJsonProvider.class)
+                .request(MediaType.APPLICATION_JSON)
+                .delete();
+        Assert.assertEquals(401, response.getStatus());
 
+    }
+
+    @Test
+    public void test11_UpdateOtherUserDetails(){
+
+        Client client= ClientBuilder.newClient();
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("ayman_100", "user");
+        client.property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION, true);
+        Response response  = client.target("http://localhost:8880/users/user/email/amr_100").register(feature).register(JacksonJsonProvider.class)
+                .request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity("max@email.com",MediaType.APPLICATION_JSON));
+        Assert.assertEquals(401, response.getStatus());
+
+    }
 
 
 
